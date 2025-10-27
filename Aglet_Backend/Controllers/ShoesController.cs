@@ -5,6 +5,7 @@ using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Aglet_Backend.Services;
 
 namespace Aglet_Backend.Controllers
 {
@@ -14,12 +15,14 @@ namespace Aglet_Backend.Controllers
     {
         private readonly ShoeDbContext _context;
         private readonly IMapper _mapper;
+        private readonly IShoeService _shoeService;
 
 
-        public ShoesController(ShoeDbContext context, IMapper mapper)
+        public ShoesController(ShoeDbContext context, IMapper mapper, IShoeService shoeService)
         {
             _context = context;
             _mapper = mapper;
+            _shoeService = shoeService;
         }
 
 
@@ -73,6 +76,14 @@ namespace Aglet_Backend.Controllers
             if (id != dto.ShoeId) return BadRequest();
             var shoe = await _context.Shoes.FindAsync(id);
             if (shoe == null) return NotFound();
+
+            // Validate stock change
+            var stockChange = dto.CurrentStock - shoe.CurrentStock;
+            if (stockChange < 0 && !await _shoeService.CanAdjustStockAsync(id, stockChange))
+            {
+                return BadRequest("Cannot reduce stock below zero.");
+            }
+
             _mapper.Map(dto, shoe);
             await _context.SaveChangesAsync();
             return NoContent();

@@ -4,6 +4,7 @@ using AutoMapper;
 using Aglet_Backend.DataAccess;
 using Aglet_Backend.Models;
 using Aglet_Backend.DTO;
+using Aglet_Backend.Services;
 
 namespace Aglet_Backend.Controllers
 {
@@ -13,11 +14,13 @@ namespace Aglet_Backend.Controllers
     {
         private readonly ShoeDbContext _context;
         private readonly IMapper _mapper;
+        private readonly IStockService _stockService;
 
-        public StockTransmissionController(ShoeDbContext context, IMapper mapper)
+        public StockTransmissionController(ShoeDbContext context, IMapper mapper, IStockService stockService)
         {
             _context = context;
             _mapper = mapper;
+            _stockService = stockService;
         }
 
         [HttpGet]
@@ -57,11 +60,8 @@ namespace Aglet_Backend.Controllers
         [HttpPost]
         public async Task<ActionResult<StockTransmissionDto>> CreateStockTransmission(StockTransmissionDto transmissionDto)
         {
-            var transmission = _mapper.Map<StockTransmission>(transmissionDto);
-            _context.StockTransmissions.Add(transmission);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetStockTransmission), new { id = transmission.TransactionId }, _mapper.Map<StockTransmissionDto>(transmission));
+            var result = await _stockService.CreateTransmissionAsync(transmissionDto);
+            return CreatedAtAction(nameof(GetStockTransmission), new { id = result.TransactionId }, result);
         }
 
         [HttpPut("{id}")]

@@ -4,6 +4,7 @@ using AutoMapper;
 using Aglet_Backend.DataAccess;
 using Aglet_Backend.Models;
 using Aglet_Backend.DTO;
+using Aglet_Backend.Services;
 
 namespace Aglet_Backend.Controllers
 {
@@ -13,11 +14,13 @@ namespace Aglet_Backend.Controllers
     {
         private readonly ShoeDbContext _context;
         private readonly IMapper _mapper;
+        private readonly IPurchaseService _purchaseService;
 
-        public PurchaseRecordController(ShoeDbContext context, IMapper mapper)
+        public PurchaseRecordController(ShoeDbContext context, IMapper mapper, IPurchaseService purchaseService)
         {
             _context = context;
             _mapper = mapper;
+            _purchaseService = purchaseService;
         }
 
         [HttpGet]
@@ -57,11 +60,8 @@ namespace Aglet_Backend.Controllers
         [HttpPost]
         public async Task<ActionResult<PurchaseRecordDto>> CreatePurchaseRecord(PurchaseRecordDto recordDto)
         {
-            var record = _mapper.Map<PurchaseRecord>(recordDto);
-            _context.PurchaseRecords.Add(record);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetPurchaseRecord), new { id = record.PurchaseId }, _mapper.Map<PurchaseRecordDto>(record));
+            var result = await _purchaseService.CreatePurchaseAsync(recordDto);
+            return CreatedAtAction(nameof(GetPurchaseRecord), new { id = result.PurchaseId }, result);
         }
 
         [HttpPut("{id}")]
